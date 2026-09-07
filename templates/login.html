@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Pro - Acceso Bodega</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-900 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-md bg-gray-800 rounded-xl shadow-2xl p-8 border border-gray-700">
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-600/20 text-blue-500 mb-3">
+                <i class="fas fa-boxes-stacked text-xl"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-white tracking-wider">MUSIC PRO</h1>
+            <p class="text-gray-400 text-xs tracking-widest uppercase mt-1">Bodega Central & Logística</p>
+        </div>
+
+        {% if error %}
+        <div class="mb-5 bg-red-900/50 border border-red-500/50 text-red-200 text-xs p-3 rounded-lg flex items-center space-x-2">
+            <i class="fas fa-triangle-exclamation text-red-400"></i>
+            <span>{{ error }}</span>
+        </div>
+        {% endif %}
+
+        <form action="{% url 'login' %}" method="POST" class="space-y-5">
+            {% csrf_token %}
+            <div>
+                <label for="username" class="block text-sm font-medium text-gray-300 mb-1.5">Usuario o Correo</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                        <i class="fas fa-user text-sm"></i>
+                    </span>
+                    <input type="text" id="username" name="username" 
+                        class="w-full pl-10 pr-4 py-2.5 bg-gray-700/60 border border-gray-600 rounded-lg text-white placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Ej: admin" required>
+                </div>
+            </div>
+
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-300 mb-1.5">Contraseña</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                        <i class="fas fa-lock text-sm"></i>
+                    </span>
+                    <input type="password" id="password" name="password" 
+                        class="w-full pl-10 pr-4 py-2.5 bg-gray-700/60 border border-gray-600 rounded-lg text-white placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="••••••••" required>
+                </div>
+            </div>
+
+            <button type="submit" 
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition shadow-lg shadow-blue-600/30">
+                Iniciar Sesión
+            </button>
+        </form>
+
+        <div class="mt-6 text-center border-t border-gray-700/60 pt-4">
+            <a href="{% url 'index' %}" class="text-xs text-gray-400 hover:text-white transition">
+                <i class="fas fa-arrow-left mr-1"></i> Volver a la portada
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>

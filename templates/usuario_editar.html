@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Usuario - Music Pro{% endblock %}
+{% block header_title %}Modificar Perfil de Usuario{% endblock %}
+
+{% block content %}
+<div class="max-w-xl bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <form action="{% url 'usuario_editar' usr.id %}" method="POST" class="space-y-4">
+        {% csrf_token %}
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Usuario (No editable)</label>
+                <input type="text" value="{{ usr.username }}" disabled class="w-full bg-gray-100 border border-gray-300 rounded-lg p-2.5 text-sm text-gray-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Rol Asignado</label>
+                <select name="rol" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm">
+                    <option value="operario" {% if not usr.is_staff %}selected{% endif %}>Operario de Bodega</option>
+                    <option value="jefe" {% if usr.is_staff %}selected{% endif %}>Jefe de Bodega</option>
+                </select>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
+            <input type="text" name="nombre" value="{{ usr.first_name }}" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm" required>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
+            <input type="email" name="email" value="{{ usr.email }}" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm" required>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Cambiar Contraseña (Opcional)</label>
+            <input type="password" name="password" placeholder="Dejar en blanco para conservar la actual" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm">
+        </div>
+
+        <div class="flex items-center space-x-2 pt-2">
+            <input type="checkbox" name="activo" id="activo" {% if usr.is_active %}checked{% endif %} class="h-4 w-4 text-blue-600 rounded">
+            <label for="activo" class="text-sm font-medium text-gray-700">Cuenta de usuario habilitada</label>
+        </div>
+
+        <div class="flex justify-end space-x-3 pt-4 border-t">
+            <a href="{% url 'usuarios_listar' %}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition">Volver</a>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition">Actualizar Datos</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
