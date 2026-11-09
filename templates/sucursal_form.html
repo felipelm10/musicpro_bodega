@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>{% if sucursal %}Editar{% else %}Nueva{% endif %} Sucursal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0">{% if sucursal %}Editar{% else %}Registrar Nueva{% endif %} Sucursal</h4>
+                </div>
+                <div class="card-body">
+                    {% if error %}
+                        <div class="alert alert-danger">{{ error }}</div>
+                    {% endif %}
+
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Código (Ej: SUC-01)</label>
+                            <input type="text" name="codigo" class="form-control" value="{{ sucursal.codigo|default:'' }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nombre de Sucursal</label>
+                            <input type="text" name="nombre" class="form-control" value="{{ sucursal.nombre|default:'' }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Dirección</label>
+                            <input type="text" name="direccion" class="form-control" value="{{ sucursal.direccion|default:'' }}" required>
+                        </div>
+                        
+                        <!-- Checkbox de estado (Solo aparece al editar) -->
+                        {% if sucursal %}
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="activa" id="activaCheck" {% if sucursal.activa %}checked{% endif %}>
+                            <label class="form-check-label" for="activaCheck">Sucursal Activa</label>
+                        </div>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'sucursales_listar' %}" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">
+                                {% if sucursal %}Actualizar{% else %}Guardar{% endif %} Sucursal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

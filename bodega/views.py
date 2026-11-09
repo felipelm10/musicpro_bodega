@@ -1,47 +1,24 @@
-from functools import wraps
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
-from django.db.models import Q
-from django.utils import timezone
-from .models import Producto, Movimiento
+from .models import Categoria, Proveedor, Sucursal, Producto, Solicitud, DetalleSolicitud, MovimientoStock
+from django.db.models import Count
 
-def jefe_requerido(view_func):
-    @wraps(view_func)
-    def _wrapped_view(request, *args, **kwargs):
-        if not request.user.is_staff:
-            return redirect('dashboard')
-        return view_func(request, *args, **kwargs)
-    return _wrapped_view
-
-def index(request):
-    return render(request, 'index.html')
-
+# ==========================================
+# 1. SISTEMA DE AUTENTICACIÓN Y DASHBOARD
+# ==========================================
 def login_view(request):
-    error_mensaje = None
+    error = None
+    if request.user.is_authenticated:
+        return redirect('dashboard')
     if request.method == 'POST':
-        identificador = request.POST.get('username', '').strip()
-        clave_input = request.POST.get('password', '').strip()
-
-        usuario_encontrado = User.objects.filter(
-            Q(username__iexact=identificador) | Q(email__iexact=identificador)
-        ).first()
-
-        user = None
-        if usuario_encontrado:
-            user = authenticate(request, username=usuario_encontrado.username, password=clave_input)
-
+        user = authenticate(request, username=request.POST.get('username'), password=request.POST.get('password'))
         if user is not None:
-            if user.is_active:
-                login(request, user)
-                return redirect('dashboard')
-            else:
-                error_mensaje = "Esta cuenta ha sido desactivada por el administrador."
+            login(request, user)
+            return redirect('dashboard')
         else:
-            error_mensaje = "Credenciales incorrectas. Verifique sus datos."
-
-    return render(request, 'login.html', {'error': error_mensaje})
+            error = "Usuario o contraseña incorrectos."
+    return render(request, 'login.html', {'error': error})
 
 def logout_view(request):
     logout(request)
@@ -49,157 +26,200 @@ def logout_view(request):
 
 @login_required(login_url='login')
 def dashboard(request):
-    productos = Producto.objects.all()
-    total_productos = productos.count()
-    stock_critico = sum(1 for p in productos if p.stock <= p.stock_minimo)
-    
-    hoy = timezone.now().date()
-    movimientos_hoy = Movimiento.objects.filter(fecha__date=hoy).count()
+    return render(request, 'dashboard.html')
 
-    contexto = {
-        'productos': productos,
-        'total_productos': total_productos,
-        'stock_critico': stock_critico,
-        'movimientos_hoy': movimientos_hoy,
-    }
-    return render(request, 'dashboard.html', contexto)
+
+# ==========================================
+# 2. CRUD DE PROVEEDORES
+# ==========================================
+@login_required(login_url='login')
+def proveedor_listar(request):
+    return render(request, 'proveedor_listar.html', {'proveedores': Proveedor.objects.all()})
 
 @login_required(login_url='login')
-def historial(request):
-    movimientos = Movimiento.objects.select_related('producto', 'responsable').order_by('-fecha')
-    return render(request, 'historial.html', {'movimientos': movimientos})
+def proveedor_crear(request):
+    error = None
+    if request.method == 'POST':
+        rut = request.POST.get('rut', '').strip()
+        if Proveedor.objects.filter(rut=rut).exists():
+            error = f"Ya existe un proveedor con el RUT {rut}."
+        else:
+            Proveedor.objects.create(
+                rut=rut, razon_social=request.POST.get('razon_social'),
+                email=request.POST.get('email'), telefono=request.POST.get('telefono')
+            )
+            return redirect('proveedores_listar')
+    return render(request, 'proveedor_form.html', {'error': error})
 
 @login_required(login_url='login')
-@jefe_requerido
+def proveedor_editar(request, id):
+    proveedor = get_object_or_404(Proveedor, id=id)
+    error = None
+    if request.method == 'POST':
+        rut = request.POST.get('rut', '').strip()
+        if Proveedor.objects.filter(rut=rut).exclude(id=id).exists():
+            error = f"Ya existe otro proveedor con el RUT {rut}."
+        else:
+            proveedor.rut = rut
+            proveedor.razon_social = request.POST.get('razon_social')
+            proveedor.email = request.POST.get('email')
+            proveedor.telefono = request.POST.get('telefono')
+            proveedor.save()
+            return redirect('proveedores_listar')
+    return render(request, 'proveedor_form.html', {'proveedor': proveedor, 'error': error})
+
+@login_required(login_url='login')
+def proveedor_eliminar(request, id):
+    get_object_or_404(Proveedor, id=id).delete()
+    return redirect('proveedores_listar')
+
+
+# ==========================================
+# 3. CRUD DE SUCURSALES
+# ==========================================
+@login_required(login_url='login')
+def sucursal_listar(request):
+    return render(request, 'sucursal_listar.html', {'sucursales': Sucursal.objects.all()})
+
+@login_required(login_url='login')
+def sucursal_crear(request):
+    error = None
+    if request.method == 'POST':
+        codigo = request.POST.get('codigo', '').strip()
+        if Sucursal.objects.filter(codigo=codigo).exists():
+            error = f"Ya existe una sucursal con el código {codigo}."
+        else:
+            Sucursal.objects.create(codigo=codigo, nombre=request.POST.get('nombre'), direccion=request.POST.get('direccion'))
+            return redirect('sucursales_listar')
+    return render(request, 'sucursal_form.html', {'error': error})
+
+@login_required(login_url='login')
+def sucursal_editar(request, id):
+    sucursal = get_object_or_404(Sucursal, id=id)
+    error = None
+    if request.method == 'POST':
+        codigo = request.POST.get('codigo', '').strip()
+        if Sucursal.objects.filter(codigo=codigo).exclude(id=id).exists():
+            error = f"Ya existe otra sucursal con el código {codigo}."
+        else:
+            sucursal.codigo = codigo
+            sucursal.nombre = request.POST.get('nombre')
+            sucursal.direccion = request.POST.get('direccion')
+            sucursal.activa = request.POST.get('activa') == 'on'
+            sucursal.save()
+            return redirect('sucursales_listar')
+    return render(request, 'sucursal_form.html', {'sucursal': sucursal, 'error': error})
+
+@login_required(login_url='login')
+def sucursal_eliminar(request, id):
+    get_object_or_404(Sucursal, id=id).delete()
+    return redirect('sucursales_listar')
+
+
+# ==========================================
+# 4. CRUD DE PRODUCTOS
+# ==========================================
+@login_required(login_url='login')
+def producto_listar(request):
+    productos = Producto.objects.select_related('categoria', 'proveedor').all()
+    return render(request, 'producto_listar.html', {'productos': productos})
+
+@login_required(login_url='login')
 def producto_crear(request):
-    if request.method == 'POST':
-        Producto.objects.create(
-            codigo=request.POST.get('codigo'),
-            nombre=request.POST.get('nombre'),
-            categoria=request.POST.get('categoria'),
-            ubicacion=request.POST.get('ubicacion'),
-            stock=int(request.POST.get('stock', 0)),
-            stock_minimo=int(request.POST.get('stock_minimo', 3))
-        )
-        return redirect('dashboard')
-    return render(request, 'producto_crear.html')
-
-@login_required(login_url='login')
-@jefe_requerido
-def producto_editar(request):
-    return render(request, 'producto_editar.html')
-
-@login_required(login_url='login')
-@jefe_requerido
-def ingreso(request):
     error = None
-    productos = Producto.objects.all().order_by('nombre')
+    if not Categoria.objects.exists():
+        Categoria.objects.create(nombre="Instrumentos de Cuerda")
+        Categoria.objects.create(nombre="Audio Profesional")
+        Categoria.objects.create(nombre="Accesorios")
 
     if request.method == 'POST':
-        producto_id = request.POST.get('producto_id')
-        cantidad = int(request.POST.get('cantidad', 0))
-        guia = request.POST.get('guia')
-        observaciones = request.POST.get('observaciones')
+        try:
+            Producto.objects.create(
+                sku=request.POST.get('sku'), # <--- Capturando el nuevo campo
+                nombre=request.POST.get('nombre'),
+                precio=request.POST.get('precio'),
+                stock_actual=request.POST.get('stock_actual'),
+                categoria=get_object_or_404(Categoria, id=request.POST.get('categoria')),
+                proveedor=get_object_or_404(Proveedor, id=request.POST.get('proveedor'))
+            )
+            return redirect('productos_listar')
+        except Exception as e:
+            error = f"Error devuelto por la base de datos: {e}"
 
-        producto = get_object_or_404(Producto, id=producto_id)
-        if cantidad <= 0:
-            error = "La cantidad debe ser mayor a 0."
-        else:
-            producto.stock += cantidad
+    return render(request, 'producto_form.html', {
+        'categorias': Categoria.objects.all(), 'proveedores': Proveedor.objects.all(), 'error': error
+    })
+
+@login_required(login_url='login')
+def producto_editar(request, id):
+    producto = get_object_or_404(Producto, id=id)
+    error = None
+    if request.method == 'POST':
+        try:
+            producto.sku = request.POST.get('sku') # <--- Actualizando el nuevo campo
+            producto.nombre = request.POST.get('nombre')
+            producto.precio = request.POST.get('precio')
+            producto.stock_actual = request.POST.get('stock_actual')
+            producto.categoria = get_object_or_404(Categoria, id=request.POST.get('categoria'))
+            producto.proveedor = get_object_or_404(Proveedor, id=request.POST.get('proveedor'))
             producto.save()
+            return redirect('productos_listar')
+        except Exception as e:
+            error = f"Error devuelto por la base de datos: {e}"
 
-            origen_info = f"Guía/Factura: {guia}" if guia else "Recepción"
-            if observaciones:
-                origen_info += f" ({observaciones})"
-
-            Movimiento.objects.create(
-                tipo='Ingreso',
-                producto=producto,
-                cantidad=cantidad,
-                origen_destino=origen_info,
-                responsable=request.user
-            )
-            return redirect('historial')
-
-    return render(request, 'ingreso.html', {'productos': productos, 'error': error})
+    return render(request, 'producto_form.html', {
+        'producto': producto, 'categorias': Categoria.objects.all(), 'proveedores': Proveedor.objects.all(), 'error': error
+    })
 
 @login_required(login_url='login')
-@jefe_requerido
-def salida(request):
+def producto_eliminar(request, id):
+    get_object_or_404(Producto, id=id).delete()
+    return redirect('productos_listar')
+
+
+# ==========================================
+# 5. MÓDULO DE REPORTES Y DESPACHO
+# ==========================================
+@login_required(login_url='login')
+def reportes_dashboard(request):
+    total_productos = Producto.objects.count()
+    productos_criticos = Producto.objects.filter(stock_actual__lte=5).select_related('proveedor')
+    productos_por_proveedor = Producto.objects.values('proveedor__razon_social').annotate(total=Count('id')).order_by('-total')
+
+    return render(request, 'reportes.html', {
+        'total_productos': total_productos,
+        'productos_criticos': productos_criticos,
+        'productos_por_proveedor': productos_por_proveedor,
+    })
+
+@login_required(login_url='login')
+def despachar_producto(request):
     error = None
-    productos = Producto.objects.filter(stock__gt=0)
+    mensaje_exito = None
 
     if request.method == 'POST':
-        producto_id = request.POST.get('producto_id')
+        producto_id = request.POST.get('producto')
+        sucursal_id = request.POST.get('sucursal')
         cantidad = int(request.POST.get('cantidad', 0))
-        destino = request.POST.get('destino')
-        orden = request.POST.get('orden')
 
-        producto = get_object_or_404(Producto, id=producto_id)
-        if cantidad <= 0:
-            error = "La cantidad debe ser mayor a 0."
-        elif cantidad > producto.stock:
-            error = f"Stock insuficiente. Solo quedan {producto.stock} unidades."
+        if producto_id and sucursal_id and cantidad > 0:
+            producto = get_object_or_404(Producto, id=producto_id)
+            
+            if cantidad <= producto.stock_actual:
+                producto.stock_actual -= cantidad
+                producto.save()
+                mensaje_exito = f"¡Éxito! Se han despachado {cantidad} unidades de '{producto.nombre}'."
+            else:
+                error = f"Stock insuficiente. Solo tienes {producto.stock_actual} unidades en bodega."
         else:
-            producto.stock -= cantidad
-            producto.save()
+            error = "Debes seleccionar un producto, una sucursal y una cantidad válida."
 
-            destino_completo = f"{destino} (OT: {orden})" if orden else destino
-            Movimiento.objects.create(
-                tipo='Salida',
-                producto=producto,
-                cantidad=cantidad,
-                origen_destino=destino_completo,
-                responsable=request.user
-            )
-            return redirect('historial')
+    productos_disponibles = Producto.objects.filter(stock_actual__gt=0)
+    sucursales = Sucursal.objects.filter(activa=True)
 
-    return render(request, 'salida.html', {'productos': productos, 'error': error})
-
-@login_required(login_url='login')
-@jefe_requerido
-def usuarios_listar(request):
-    usuarios = User.objects.all().order_by('id')
-    return render(request, 'usuarios_listar.html', {'usuarios': usuarios})
-
-@login_required(login_url='login')
-@jefe_requerido
-def usuario_crear(request):
-    error = None
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        nombre = request.POST.get('nombre')
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-        rol = request.POST.get('rol')
-
-        if User.objects.filter(username=username).exists():
-            error = f"El usuario/RUT '{username}' ya existe."
-        else:
-            User.objects.create_user(
-                username=username,
-                email=email,
-                password=password,
-                first_name=nombre,
-                is_staff=(rol == 'jefe')
-            )
-            return redirect('usuarios_listar')
-
-    return render(request, 'usuario_crear.html', {'error': error})
-
-@login_required(login_url='login')
-@jefe_requerido
-def usuario_editar(request, user_id):
-    usuario = get_object_or_404(User, id=user_id)
-    if request.method == 'POST':
-        usuario.first_name = request.POST.get('nombre')
-        usuario.email = request.POST.get('email')
-        usuario.is_staff = (request.POST.get('rol') == 'jefe')
-        usuario.is_active = ('activo' in request.POST)
-        nueva_clave = request.POST.get('password')
-        if nueva_clave:
-            usuario.set_password(nueva_clave)
-        usuario.save()
-        return redirect('usuarios_listar')
-
-    return render(request, 'usuario_editar.html', {'usr': usuario})
+    return render(request, 'despacho_form.html', {
+        'productos': productos_disponibles,
+        'sucursales': sucursales,
+        'error': error,
+        'mensaje_exito': mensaje_exito
+    })

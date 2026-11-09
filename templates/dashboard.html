@@ -1,97 +1,51 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - Music Pro Bodega</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
 
-{% block title %}Inventario y Stock - Music Pro{% endblock %}
-{% block header_title %}Control Central de Existencias{% endblock %}
-
-{% block header_action %}
-<a href="{% url 'producto_crear' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2">
-    <i class="fas fa-plus"></i>
-    <span>Nuevo Producto</span>
-</a>
-{% endblock %}
-
-{% block content %}
-<div class="space-y-6">
-
-    <!-- Tarjetas de Métricas -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200 flex items-center justify-between">
-            <div>
-                <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Productos</p>
-                <p class="text-2xl font-bold text-gray-800 mt-1">{{ total_productos }}</p>
-            </div>
-            <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
-                <i class="fas fa-boxes text-lg"></i>
-            </div>
-        </div>
-
-        <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200 flex items-center justify-between">
-            <div>
-                <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Alertas Stock Crítico</p>
-                <p class="text-2xl font-bold text-red-600 mt-1">{{ stock_critico }}</p>
-            </div>
-            <div class="w-10 h-10 rounded-full bg-red-50 text-red-600 flex items-center justify-center">
-                <i class="fas fa-triangle-exclamation text-lg"></i>
-            </div>
-        </div>
-
-        <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200 flex items-center justify-between">
-            <div>
-                <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Movimientos Registrados</p>
-                <p class="text-2xl font-bold text-green-600 mt-1">{{ movimientos_hoy }}</p>
-            </div>
-            <div class="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center">
-                <i class="fas fa-truck-ramp-box text-lg"></i>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tabla -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-            <h3 class="font-semibold text-gray-700 text-sm">Catálogo de Almacén</h3>
-            <span class="text-xs text-gray-500">Datos simulados en memoria</span>
-        </div>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'dashboard' %}">🎵 Music Pro</a>
         
-        <table class="w-full text-left border-collapse text-sm">
-            <thead class="bg-gray-800 text-white uppercase text-xs">
-                <tr>
-                    <th class="px-6 py-3">Código</th>
-                    <th class="px-6 py-3">Producto / Modelo</th>
-                    <th class="px-6 py-3">Categoría</th>
-                    <th class="px-6 py-3">Ubicación</th>
-                    <th class="px-6 py-3 text-center">Stock</th>
-                    <th class="px-6 py-3 text-center">Acciones</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200 text-gray-700">
-                {% for prod in productos %}
-                <tr class="hover:bg-gray-50 {% if prod.stock <= prod.stock_minimo %}bg-red-50/40{% endif %}">
-                    <td class="px-6 py-4 font-mono font-bold text-blue-600">{{ prod.codigo }}</td>
-                    <td class="px-6 py-4 font-medium text-gray-900">{{ prod.nombre }}</td>
-                    <td class="px-6 py-4">{{ prod.categoria }}</td>
-                    <td class="px-6 py-4 text-gray-500">{{ prod.ubicacion }}</td>
-                    <td class="px-6 py-4 text-center">
-                        {% if prod.stock <= prod.stock_minimo %}
-                            <span class="bg-red-100 text-red-700 text-xs font-bold px-2.5 py-1 rounded-full">
-                                {{ prod.stock }} unid. (Crítico)
-                            </span>
-                        {% else %}
-                            <span class="bg-green-100 text-green-800 text-xs font-bold px-2.5 py-1 rounded-full">
-                                {{ prod.stock }} unid.
-                            </span>
-                        {% endif %}
-                    </td>
-                    <td class="px-6 py-4 text-center">
-                        <a href="{% url 'producto_editar' %}" class="text-blue-600 hover:text-blue-800 mx-1">
-                            <i class="fas fa-edit"></i>
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="{% url 'proveedores_listar' %}">📦 Proveedores</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="{% url 'sucursales_listar' %}">🏢 Sucursales</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="{% url 'productos_listar' %}">🎸 Productos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-warning fw-bold" href="{% url 'reportes' %}">📊 Reportes y ORM</a>
+                </li>
+                <!-- El botón estrella del proyecto -->
+                <li class="nav-item">
+                    <a class="nav-link text-info fw-bold ms-3" href="{% url 'despachar' %}">🚚 Despachar a Sucursal</a>
+                </li>
+            </ul>
+        </div>
 
+        <div class="d-flex align-items-center">
+            <span class="navbar-text me-3 text-white">Hola, <strong>{{ request.user.username }}</strong></span>
+            <a href="{% url 'logout' %}" class="btn btn-danger btn-sm">Cerrar Sesión</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <h1>Panel Central de Bodega</h1>
+            <p class="lead">Sistema de control logístico y distribución comercial.</p>
+        </div>
+    </div>
 </div>
-{% endblock %}
+</body>
+</html>

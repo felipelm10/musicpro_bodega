@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reportes - Bodega</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>📊 Módulo de Reportes ORM</h2>
+        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Volver al Dashboard</a>
+    </div>
+
+    <!-- Tarjetas KPI -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card text-white bg-primary shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Total de Productos en Catálogo</h5>
+                    <h1 class="display-4">{{ total_productos }}</h1>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card text-white bg-danger shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Productos en Stock Crítico (<= 5)</h5>
+                    <h1 class="display-4">{{ productos_criticos|length }}</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tablas de Reportes -->
+    <div class="row">
+        <!-- Columna Izquierda: Alerta de Stock -->
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">⚠️ Alerta de Reposición (Stock Crítico)</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Proveedor</th>
+                                <th>Stock Actual</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in productos_criticos %}
+                            <tr>
+                                <td>{{ p.nombre }}</td>
+                                <td>{{ p.proveedor.razon_social }}</td>
+                                <td><strong class="text-danger">{{ p.stock_actual }} un.</strong></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center text-success">Todos los productos tienen buen stock.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna Derecha: Conteo por Proveedor -->
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">📦 Productos por Proveedor</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        {% for prov in productos_por_proveedor %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ prov.proveedor__razon_social }}
+                            <span class="badge bg-primary rounded-pill">{{ prov.total }}</span>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item text-center">No hay datos suficientes.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

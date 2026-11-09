@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Despachar Producto</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7">
+            <div class="card shadow-sm border-info">
+                <div class="card-header bg-info text-dark fw-bold">
+                    <h4 class="mb-0">🚚 Despachar Producto a Sucursal</h4>
+                </div>
+                <div class="card-body">
+                    
+                    {% if error %}
+                        <div class="alert alert-danger">{{ error }}</div>
+                    {% endif %}
+                    
+                    {% if mensaje_exito %}
+                        <div class="alert alert-success">{{ mensaje_exito }}</div>
+                    {% endif %}
+
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">1. Selecciona el Producto a Enviar</label>
+                            <select name="producto" class="form-select" required>
+                                <option value="">Elige un producto con stock...</option>
+                                {% for p in productos %}
+                                    <option value="{{ p.id }}">{{ p.nombre }} (Disponibles: {{ p.stock_actual }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">2. Sucursal de Destino</label>
+                            <select name="sucursal" class="form-select" required>
+                                <option value="">Elige la sucursal de destino...</option>
+                                {% for s in sucursales %}
+                                    <option value="{{ s.id }}">{{ s.nombre }} - {{ s.direccion }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">3. Cantidad a Despachar</label>
+                            <input type="number" name="cantidad" class="form-control form-control-lg" min="1" required placeholder="Ej: 5">
+                            <small class="text-muted">El sistema validará que haya stock suficiente en la bodega antes de enviar.</small>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Volver</a>
+                            <button type="submit" class="btn btn-info fw-bold text-dark">Confirmar Despacho</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
